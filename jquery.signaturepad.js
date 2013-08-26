@@ -634,12 +634,9 @@ function SignaturePad (selector, options) {
             var bezierControlPoints = [];
           }
 
-          console.log(i, paths[i], bezierControlPoints.length);
-          console.log(bezierControlPoints);
 
           if (bezierControlPoints.length >= 4) {
             /* Yay enough points to draw a Bezier curve! Let's draw this sucker. */
-            console.log("4!!!");
 
             context.beginPath()
             // context.moveTo(paths[i].mx, paths[i].my)
