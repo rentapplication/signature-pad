@@ -607,60 +607,13 @@ function SignaturePad (selector, options) {
    * @param {Boolean} saveOutput whether to write the path to the output array or not
    */
   function drawSignature (paths, context, saveOutput) {
+    var drawLinearSegments = true;
+    var drawBezierCurves = true;
+
     for(var i in paths) {
       if (typeof paths[i] === 'object') {
 
-        var tryBezier = true;
-
-        /*
-          For the new approach:
-          first separate into separate paths
-          we need to process the entire path to compute B* points
-          then we need to compute the bezier points (3rds between the B* points)
-          then stroke
-        */
-
-        if (tryBezier === true) {
-          /*
-          Bezier's require 4 points.
-          As an initial proof of concept, I'm just going to rip 4 consecutive points then draw a bezier
-          */
-
-          try {
-            // Sloppy way to instantiate this bezier holder
-            // Just want to contain it all while doing proof of concept
-            bezierControlPoints.push(paths[i]);
-          } catch(err) {
-            var bezierControlPoints = [];
-          }
-
-
-          if (bezierControlPoints.length >= 4) {
-            /* Yay enough points to draw a Bezier curve! Let's draw this sucker. */
-
-            context.beginPath()
-            // context.moveTo(paths[i].mx, paths[i].my)
-            // context.lineTo(paths[i].lx, paths[i].ly)
-            context.moveTo(bezierControlPoints[0].lx, bezierControlPoints[0].ly)
-            context.bezierCurveTo(
-              bezierControlPoints[1].lx, bezierControlPoints[1].ly,
-              bezierControlPoints[2].lx, bezierControlPoints[2].ly,
-              bezierControlPoints[3].lx, bezierControlPoints[3].ly
-              );
-            context.lineCap = settings.penCap
-            context.strokeStyle = '#0000FF';
-            context.stroke()
-            context.closePath()
-
-            // Reset the control points. Save the old last one as the new first one
-            // so the next bezier curve starts joined with the previous
-            var bezierControlPoints = [bezierControlPoints[3]];
-
-          }
-        }
-
-        var drawTheOriginalLine = true;
-        if (drawTheOriginalLine === true) {
+        if (drawLinearSegments === true) {
           context.beginPath()
           context.strokeStyle = '#ff0000';
           context.moveTo(paths[i].mx, paths[i].my)
@@ -679,7 +632,56 @@ function SignaturePad (selector, options) {
           })
         }
       }
-    }
+    } /* end linear segments */
+
+    if (drawBezierCurves === true) {
+      /*
+        For the new approach:
+        first separate into separate paths
+        we need to process the entire path to compute B* points
+        then we need to compute the bezier points (3rds between the B* points)
+        then stroke
+      */
+
+      /*
+      Bezier's require 4 points.
+      As an initial proof of concept, I'm just going to rip 4 consecutive points then draw a bezier
+      */
+
+    for(var i in paths) {
+      if (typeof paths[i] === 'object') {
+      try {
+        // Sloppy way to instantiate this bezier holder
+        // Just want to contain it all while doing proof of concept
+        bezierControlPoints.push(paths[i]);
+      } catch(err) {
+        var bezierControlPoints = [];
+      }
+
+      if (bezierControlPoints.length >= 4) {
+        /* Yay enough points to draw a Bezier curve! Let's draw this sucker. */
+
+        context.beginPath()
+        // context.moveTo(paths[i].mx, paths[i].my)
+        // context.lineTo(paths[i].lx, paths[i].ly)
+        context.moveTo(bezierControlPoints[0].lx, bezierControlPoints[0].ly)
+        context.bezierCurveTo(
+          bezierControlPoints[1].lx, bezierControlPoints[1].ly,
+          bezierControlPoints[2].lx, bezierControlPoints[2].ly,
+          bezierControlPoints[3].lx, bezierControlPoints[3].ly
+          );
+        context.lineCap = settings.penCap
+        context.strokeStyle = '#0000FF';
+        context.stroke()
+        context.closePath()
+
+        // Reset the control points. Save the old last one as the new first one
+        // so the next bezier curve starts joined with the previous
+        var bezierControlPoints = [bezierControlPoints[3]];
+      }
+
+      }} /* bullshit */
+    } /* end bezier curves */
   }
 
   /**
