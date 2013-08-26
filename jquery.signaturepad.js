@@ -612,6 +612,14 @@ function SignaturePad (selector, options) {
 
         var tryBezier = true;
 
+        /*
+          For the new approach:
+          first separate into separate paths
+          we need to process the entire path to compute B* points
+          then we need to compute the bezier points (3rds between the B* points)
+          then stroke
+        */
+
         if (tryBezier === true) {
           /*
           Bezier's require 4 points.
@@ -636,11 +644,11 @@ function SignaturePad (selector, options) {
             context.beginPath()
             // context.moveTo(paths[i].mx, paths[i].my)
             // context.lineTo(paths[i].lx, paths[i].ly)
-            context.moveTo(bezierControlPoints[0].mx, bezierControlPoints[0].my)
+            context.moveTo(bezierControlPoints[0].lx, bezierControlPoints[0].ly)
             context.bezierCurveTo(
-              bezierControlPoints[1].mx, bezierControlPoints[1].my,
-              bezierControlPoints[2].mx, bezierControlPoints[2].my,
-              bezierControlPoints[3].mx, bezierControlPoints[3].my
+              bezierControlPoints[1].lx, bezierControlPoints[1].ly,
+              bezierControlPoints[2].lx, bezierControlPoints[2].ly,
+              bezierControlPoints[3].lx, bezierControlPoints[3].ly
               );
             context.lineCap = settings.penCap
             context.strokeStyle = '#0000FF';
@@ -650,7 +658,6 @@ function SignaturePad (selector, options) {
             // Reset the control points. Save the old last one as the new first one
             // so the next bezier curve starts joined with the previous
             var bezierControlPoints = [bezierControlPoints[3]];
-
 
           }
         }
