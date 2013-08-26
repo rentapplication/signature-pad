@@ -609,12 +609,63 @@ function SignaturePad (selector, options) {
   function drawSignature (paths, context, saveOutput) {
     for(var i in paths) {
       if (typeof paths[i] === 'object') {
+
+        var tryBezier = true;
+
+        if (tryBezier === true) {
+          /*
+          Bezier's require 4 points.
+          As an initial proof of concept, I'm just going to rip 4 consecutive points then draw a bezier
+          */
+
+          try {
+            // Sloppy way to instantiate this bezier holder
+            // Just want to contain it all while doing proof of concept
+            bezierControlPoints.push(paths[i]);
+          } catch(err) {
+            var bezierControlPoints = [];
+          }
+
+          console.log(i, paths[i], bezierControlPoints.length);
+          console.log(bezierControlPoints);
+
+          if (bezierControlPoints.length >= 4) {
+            /* Yay enough points to draw a Bezier curve! Let's draw this sucker. */
+            console.log("4!!!");
+
+            context.beginPath()
+            // context.moveTo(paths[i].mx, paths[i].my)
+            // context.lineTo(paths[i].lx, paths[i].ly)
+            context.moveTo(bezierControlPoints[0].mx, bezierControlPoints[0].my)
+            context.bezierCurveTo(
+              bezierControlPoints[1].mx, bezierControlPoints[1].my,
+              bezierControlPoints[2].mx, bezierControlPoints[2].my,
+              bezierControlPoints[3].mx, bezierControlPoints[3].my
+              );
+            context.lineCap = settings.penCap
+            context.strokeStyle = '#0000FF';
+            context.stroke()
+            context.closePath()
+
+            // Reset the control points. Save the old last one as the new first one
+            // so the next bezier curve starts joined with the previous
+            var bezierControlPoints = [bezierControlPoints[3]];
+
+
+          }
+        }
+
+        var drawTheOriginalLine = true;
+        if (drawTheOriginalLine === true) {
+        /* The original stroking code. left here for my reference. also being lazy about indenting so it registers less LOC changed */
         context.beginPath()
+        context.strokeStyle = '#ff0000';
         context.moveTo(paths[i].mx, paths[i].my)
         context.lineTo(paths[i].lx, paths[i].ly)
         context.lineCap = settings.penCap
         context.stroke()
         context.closePath()
+        }
 
         if (saveOutput) {
           output.push({
