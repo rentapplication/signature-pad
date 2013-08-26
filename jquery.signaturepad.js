@@ -657,14 +657,13 @@ function SignaturePad (selector, options) {
 
         var drawTheOriginalLine = true;
         if (drawTheOriginalLine === true) {
-        /* The original stroking code. left here for my reference. also being lazy about indenting so it registers less LOC changed */
-        context.beginPath()
-        context.strokeStyle = '#ff0000';
-        context.moveTo(paths[i].mx, paths[i].my)
-        context.lineTo(paths[i].lx, paths[i].ly)
-        context.lineCap = settings.penCap
-        context.stroke()
-        context.closePath()
+          context.beginPath()
+          context.strokeStyle = '#ff0000';
+          context.moveTo(paths[i].mx, paths[i].my)
+          context.lineTo(paths[i].lx, paths[i].ly)
+          context.lineCap = settings.penCap
+          context.stroke()
+          context.closePath()
         }
 
         if (saveOutput) {
