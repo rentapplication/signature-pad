@@ -609,7 +609,7 @@ function SignaturePad (selector, options) {
   function drawSignature (paths, context, saveOutput) {
     var drawLinearSegments = false;
     var drawBezierCurves = true;
-    var bezierSkip = 8; // this program samples too fast, so even if we spline it,
+    var bezierSkip = 4; // this program samples too fast, so even if we spline it,
                          // the result is choppy. need to throw away points or do
                          // a best fit curve of some sort. throwing away points
                          // is easier. Only use 1/bezierSkip points.
@@ -650,6 +650,33 @@ function SignaturePad (selector, options) {
                           // to compute the bezier control points
       var sections = [];  // sections is an array of the preceding section arrays
 
+      // compute the total distance traveled for the entire signature
+      // we'll use this for calculating stroke width later to simulate
+      // signing speed
+      var xs = paths.map(function(n) { return n.lx; });
+      var ys = paths.map(function(n) { return n.ly; });
+      var dxs = numeric.pow(xs.map(function(item,index) {return xs[index+1]-item}), 2);
+      var dys = numeric.pow(ys.map(function(item,index) {return ys[index+1]-item}), 2);
+      dxs.pop();
+      dys.pop();
+      var distances = numeric.add(dxs, dys);
+
+      var mean = function(array) { return numeric.sum(array) / array.length;}
+      var stdev = function(array) {
+        var avg = mean(array);
+        diffs = array.map(function(i) {
+          return i-avg;
+        });
+        var squares = numeric.pow(diffs, 2);
+        return Math.sqrt(numeric.sum(squares));
+      }
+
+      var meanDistance = mean(distances);
+      var stdevDistance = stdev(distances);
+
+      // Not using actual pythagorean distance because, well who cares, and it'll require
+      // extra computation later.  only distance by traversing city blocks
+
       for (var i = 0; i < paths.length - 1; i++) {
         // this method of separating the contiguous paths is fucking stupid
         if (typeof(paths[i]) === 'object' && typeof(paths[i + 1]) === 'object') {
@@ -657,7 +684,6 @@ function SignaturePad (selector, options) {
           var destination = paths[i + 1];
 
           if (source.mx == source.lx && source.my == source.ly) {
-            console.log("dupe");
             // don't put duplicated elements in, it screws up
             // the curves. do nothing here.
           } else {
@@ -669,7 +695,6 @@ function SignaturePad (selector, options) {
 
             // First save the section as an independent piece in our sections array
             sections.push(section);
-            console.log(section.length);
             // Now reset the section array to start recording the next section
             section = [];
           }
@@ -677,7 +702,6 @@ function SignaturePad (selector, options) {
           if (i == paths.length - 2) {
             section.push(destination);
             sections.push(section);
-            console.log(section.length);
           }
         }
       }
@@ -688,7 +712,6 @@ function SignaturePad (selector, options) {
         curves that pass through all the sampled points.
       */
 
-      console.log(sections.length, sections);
       for (k = 0; k < sections.length; k++) {
         var section = sections[k];
 
@@ -699,11 +722,20 @@ function SignaturePad (selector, options) {
         var simpleTuples = section.map(function(n) {return[n.lx, n.ly]});
         var beziers = getBezierControlPoints(simpleTuples);
 
+        var width = 3;
+        var oldSegmentLength = 1;
         for (var i in beziers) {
           var p0 = beziers[i][0],
               p1 = beziers[i][1],
               p2 = beziers[i][2],
               p3 = beziers[i][3];
+
+          var newSegmentLength = Math.pow(p0[0] - p3[0], 2) + Math.pow(p0[1] - p3[1], 2);
+          if (newSegmentLength > oldSegmentLength) {
+            width -= 0.8;
+          } else {
+            width + 0.8;
+          }
 
           context.beginPath()
           context.moveTo(p0[0], p0[1])
@@ -712,10 +744,11 @@ function SignaturePad (selector, options) {
             p2[0], p2[1],
             p3[0], p3[1]
             );
+          context.lineWidth = width;
           context.lineCap = settings.penCap
           context.strokeStyle = '#0000FF';
           context.stroke()
-          context.closePath()
+          context.closePath();
         }
       }
     } /* end bezier curves */
