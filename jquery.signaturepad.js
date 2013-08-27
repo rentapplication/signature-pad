@@ -607,10 +607,15 @@ function SignaturePad (selector, options) {
    * @param {Boolean} saveOutput whether to write the path to the output array or not
    */
   function drawSignature (paths, context, saveOutput) {
-    var drawLinearSegments = true;
+    var drawLinearSegments = false;
     var drawBezierCurves = true;
+    var bezierSkip = 8; // this program samples too fast, so even if we spline it,
+                         // the result is choppy. need to throw away points or do
+                         // a best fit curve of some sort. throwing away points
+                         // is easier. Only use 1/bezierSkip points.
 
     context.scale.apply(context, settings.scale);
+
     for(var i in paths) {
       if (typeof paths[i] === 'object') {
 
@@ -637,47 +642,42 @@ function SignaturePad (selector, options) {
 
     if (drawBezierCurves === true) {
       /*
-        For the new approach:
-        first separate into separate paths
-        we need to process the entire path to compute B* points
-        then we need to compute the bezier points (3rds between the B* points)
-        then stroke
-      */
-
-      /*
         Identify disconnected sections so we don't accidentally try to draw
         bezier curves between them (when user lifts the pen/mouse)
       */
 
+      var section = [];   // section is an array of path points that will be used
+                          // to compute the bezier control points
+      var sections = [];  // sections is an array of the preceding section arrays
 
-      var section = []; // section is an array of path points that will be used
-                    // to compute the bezier control points
-      var sections = []; // sections is an array of the preceding section arrays
-
-      for (var i = 0; i < paths.length; i++) {
+      for (var i = 0; i < paths.length - 1; i++) {
+        // this method of separating the contiguous paths is fucking stupid
         if (typeof(paths[i]) === 'object' && typeof(paths[i + 1]) === 'object') {
-          if (section.length === 0) {
-            section.push(paths[i]);
-          }
-
           var source = paths[i];
           var destination = paths[i + 1];
 
-          if (source.mx == destination.lx && source.my == destination.ly) {
-            // These belong to the same section of the signature
-            if (source.mx == source.lx && source.my == source.ly) {
-              // don't put duplicated elements in, it screws up
-              // the curves. do nothing here.
-            } else {
-              section.push(destination);
-            }
+          if (source.mx == source.lx && source.my == source.ly) {
+            console.log("dupe");
+            // don't put duplicated elements in, it screws up
+            // the curves. do nothing here.
           } else {
-            // Different sections, so lets separate them
+            section.push(source);
+          }
+
+          if ( !(source.lx == destination.mx && source.ly == destination.my) &&
+               !(source.mx == destination.lx && source.my == destination.ly) ) {
 
             // First save the section as an independent piece in our sections array
             sections.push(section);
+            console.log(section.length);
             // Now reset the section array to start recording the next section
-            section = []
+            section = [];
+          }
+
+          if (i == paths.length - 2) {
+            section.push(destination);
+            sections.push(section);
+            console.log(section.length);
           }
         }
       }
@@ -688,32 +688,35 @@ function SignaturePad (selector, options) {
         curves that pass through all the sampled points.
       */
 
-      for (i = 0; i < sections.length; i++) {
-        var section = sections[i];
-      }
+      console.log(sections.length, sections);
+      for (k = 0; k < sections.length; k++) {
+        var section = sections[k];
 
-      var simpleTuples = section.map(function(n) {return[n.lx, n.ly]});
-      var beziers = getBezierControlPoints(simpleTuples)
+        var lastPoint = section.pop();
+        section = section.filter(function(element, index) { return index % bezierSkip == 0; });
+        section.push(lastPoint);
 
-      for (var i in beziers) {
-        var p0 = beziers[i][0],
-            p1 = beziers[i][1],
-            p2 = beziers[i][2],
-            p3 = beziers[i][3];
+        var simpleTuples = section.map(function(n) {return[n.lx, n.ly]});
+        var beziers = getBezierControlPoints(simpleTuples);
 
-        console.log(p0, p1, p2, p3)
+        for (var i in beziers) {
+          var p0 = beziers[i][0],
+              p1 = beziers[i][1],
+              p2 = beziers[i][2],
+              p3 = beziers[i][3];
 
-        context.beginPath()
-        context.moveTo(p0[0], p0[1])
-        context.bezierCurveTo(
-          p1[0], p1[1],
-          p2[0], p2[1],
-          p3[0], p3[1]
-          );
-        context.lineCap = settings.penCap
-        context.strokeStyle = '#0000FF';
-        context.stroke()
-        context.closePath()
+          context.beginPath()
+          context.moveTo(p0[0], p0[1])
+          context.bezierCurveTo(
+            p1[0], p1[1],
+            p2[0], p2[1],
+            p3[0], p3[1]
+            );
+          context.lineCap = settings.penCap
+          context.strokeStyle = '#0000FF';
+          context.stroke()
+          context.closePath()
+        }
       }
     } /* end bezier curves */
   }

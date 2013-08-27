@@ -55,12 +55,7 @@
           // First one is a special case
           var p0 = BSplinePoints[0];
         } else {
-          // in principle I never need to recompute p0 since it's the preceding iterations p3.
-          // leaving it for clarity though
-          var p0 = numeric.add( numeric.mul(1/6, BSplinePoints[i - 1]),
-                                numeric.mul(2/3, BSplinePoints[i]),
-                                numeric.mul(1/6, BSplinePoints[i + 1])
-                              );
+          var p0 = p3;
         }
 
         var p1 = numeric.add( numeric.mul(2/3, BSplinePoints[i]),
@@ -87,13 +82,12 @@
 
     var getBezierControlPoints = function(sampledPoints) {
       if (sampledPoints.length < 4) {
-        console.log("too short");
+        console.log("too short:", sampledPoints);
         // should do linear or quadratic beziers
         return;
       }
       var M = generate141Matrix(sampledPoints.length - 2);
       var C = generateConstantMatrix(sampledPoints);
-
       var B = numeric.dot(numeric.inv(M), C);
 
       // B-spline control points also include the endpoints of the sampled data
