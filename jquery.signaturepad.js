@@ -643,13 +643,20 @@ function SignaturePad (selector, options) {
         var scaleFactor = canvas.height() / signatureHeight;
       }
 
-      // there's whitespace that gets scaled.
-      // first translate balances out the whitespace
-      context.translate(-minX, -minY);
-      // foo = (canvas.width() - signatureWidth) / 2 ;
-      // bar = (canvas.height() - signatureHeight) / 2;
-      // console.log(foo, bar);
-      // context.translate(foo, bar);
+      // there's whitespace to the top and left of the signature
+      // that gets scaled. translate it back to center
+      // first translate balances out the whitespace.
+      // this only fixes the whitespace on the CONSTRAINING
+      // dimenson.  i.e. the x axis for "fat" signatures
+      context.translate(-minX / 2, -minY / 2);
+
+      // now to center on the non-constraining dimension
+      // one of these will be zero (the constraining dimension)
+      // then the other gets translated to the middle
+      context.translate(
+        (canvas.width() - signatureWidth * scaleFactor) / 2,
+        (canvas.height() - signatureHeight * scaleFactor) / 2
+      );
 
       context.scale.apply(context, [scaleFactor, scaleFactor]);
     } else {
