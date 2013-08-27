@@ -610,6 +610,7 @@ function SignaturePad (selector, options) {
     var drawLinearSegments = true;
     var drawBezierCurves = true;
 
+    context.scale.apply(context, settings.scale);
     for(var i in paths) {
       if (typeof paths[i] === 'object') {
 
@@ -949,6 +950,7 @@ $.fn.signaturePad.defaults = {
   , onFormError : null // Pass a callback to be used instead of the built-in function
   , onDraw : null // Pass a callback to be used to capture the drawing process
   , onDrawEnd : null // Pass a callback to be exectued after the drawing process
+  , scale: [1, 1] // Canvas scale for X and Y respectivately
 }
 
 }(jQuery))
