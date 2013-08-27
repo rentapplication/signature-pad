@@ -644,43 +644,76 @@ function SignaturePad (selector, options) {
       */
 
       /*
-      Bezier's require 4 points.
-      As an initial proof of concept, I'm just going to rip 4 consecutive points then draw a bezier
+        Identify disconnected sections so we don't accidentally try to draw
+        bezier curves between them (when user lifts the pen/mouse)
       */
 
-    for(var i in paths) {
-      if (typeof paths[i] === 'object') {
-      try {
-        // Sloppy way to instantiate this bezier holder
-        // Just want to contain it all while doing proof of concept
-        bezierControlPoints.push(paths[i]);
-      } catch(err) {
-        var bezierControlPoints = [];
+
+      var section = []; // section is an array of path points that will be used
+                    // to compute the bezier control points
+      var sections = []; // sections is an array of the preceding section arrays
+
+      for (var i = 0; i < paths.length; i++) {
+        if (typeof(paths[i]) === 'object' && typeof(paths[i + 1]) === 'object') {
+          if (section.length === 0) {
+            section.push(paths[i]);
+          }
+
+          var source = paths[i];
+          var destination = paths[i + 1];
+
+          if (source.mx == destination.lx && source.my == destination.ly) {
+            // These belong to the same section of the signature
+            if (source.mx == source.lx && source.my == source.ly) {
+              // don't put duplicated elements in, it screws up
+              // the curves. do nothing here.
+            } else {
+              section.push(destination);
+            }
+          } else {
+            // Different sections, so lets separate them
+
+            // First save the section as an independent piece in our sections array
+            sections.push(section);
+            // Now reset the section array to start recording the next section
+            section = []
+          }
+        }
       }
 
-      if (bezierControlPoints.length >= 4) {
-        /* Yay enough points to draw a Bezier curve! Let's draw this sucker. */
+      /*
+        Now we have sections of points that we have sampled.
+        Next step is to compute the Bezier control points that will render
+        curves that pass through all the sampled points.
+      */
+
+      for (i = 0; i < sections.length; i++) {
+        var section = sections[i];
+      }
+
+      var simpleTuples = section.map(function(n) {return[n.lx, n.ly]});
+      var beziers = getBezierControlPoints(simpleTuples)
+
+      for (var i in beziers) {
+        var p0 = beziers[i][0],
+            p1 = beziers[i][1],
+            p2 = beziers[i][2],
+            p3 = beziers[i][3];
+
+        console.log(p0, p1, p2, p3)
 
         context.beginPath()
-        // context.moveTo(paths[i].mx, paths[i].my)
-        // context.lineTo(paths[i].lx, paths[i].ly)
-        context.moveTo(bezierControlPoints[0].lx, bezierControlPoints[0].ly)
+        context.moveTo(p0[0], p0[1])
         context.bezierCurveTo(
-          bezierControlPoints[1].lx, bezierControlPoints[1].ly,
-          bezierControlPoints[2].lx, bezierControlPoints[2].ly,
-          bezierControlPoints[3].lx, bezierControlPoints[3].ly
+          p1[0], p1[1],
+          p2[0], p2[1],
+          p3[0], p3[1]
           );
         context.lineCap = settings.penCap
         context.strokeStyle = '#0000FF';
         context.stroke()
         context.closePath()
-
-        // Reset the control points. Save the old last one as the new first one
-        // so the next bezier curve starts joined with the previous
-        var bezierControlPoints = [bezierControlPoints[3]];
       }
-
-      }} /* bullshit */
     } /* end bezier curves */
   }
 
