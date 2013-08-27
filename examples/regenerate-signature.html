@@ -35,6 +35,14 @@
     <p>Sir John A. Macdonald<br>July 1, 1867</p>
   </div>
 
+  <div id="sig4" class="sigPad signed" style="width:504px;border:solid black 1px;">
+    <div class="sigWrapper" style="height:600px;">
+      <div class="typed">Sir John A. Macdonald</div>
+      <canvas class="pad" width="500" height="600"></canvas>
+    </div>
+    <p>Sir John A. Macdonald<br>July 1, 1867</p>
+  </div> 
+
   <script src="../assets/numeric-1.2.6.min.js"></script>
   <script src="../assets/bezier.js"></script>
 
@@ -43,8 +51,9 @@
   <script>
     $(document).ready(function() {
       $('#sig1').signaturePad({displayOnly:true}).regenerate(sig);
-      $('#sig2').signaturePad({displayOnly:true, scale:[2, 2]}).regenerate(sig);
-      $('#sig3').signaturePad({displayOnly:true, scale:[4, 2]}).regenerate(sig);
+      $('#sig2').signaturePad({displayOnly:true, scale:[2, 2], autoscale:true}).regenerate(sig);
+      $('#sig3').signaturePad({displayOnly:true, scale:[4, 0.5], autoscale:true}).regenerate(sig);
+      $('#sig4').signaturePad({displayOnly:true, autoscale:true}).regenerate(sig);
     });
   </script>
   <script src="../assets/json2.min.js"></script>

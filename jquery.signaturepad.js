@@ -614,7 +614,47 @@ function SignaturePad (selector, options) {
                          // a best fit curve of some sort. throwing away points
                          // is easier. Only use 1/bezierSkip points.
 
-    context.scale.apply(context, settings.scale);
+    if (settings.autoscale) {
+      var maxX = 0,
+          maxY = 0,
+          minX = $(canvas).width(),
+          minY = $(canvas).height();
+      $.each(paths, function(idx, el) {
+        maxX = Math.max(el.mx, el.lx, maxX);
+        minX = Math.min(el.mx, el.lx, minX);
+        maxY = Math.max(el.my, el.ly, maxY);
+        minY = Math.min(el.my, el.ly, minY);
+      });
+
+      // these might have to be constrainged to zero, because we're also scaling the whitespace
+      // OR (this would be "nicer" but more work --  we could actually adjust the points on the sampled json)
+      var signatureWidth = maxX - minX;
+      var signatureHeight = maxY - minY;
+      var signatureWidth = maxX;
+      var signatureHeight = maxY;
+      var signatureAspectRatio = signatureWidth / signatureHeight;
+      var canvasAspectRatio = canvas.width() / canvas.height();
+      if (signatureAspectRatio > canvasAspectRatio) {
+        // signature is "fat"
+        // width is the constraining factor, so we need to limit this by width
+        var scaleFactor = canvas.width() / signatureWidth;
+      } else {
+        // signature is "tall"
+        var scaleFactor = canvas.height() / signatureHeight;
+      }
+
+      // there's whitespace that gets scaled.
+      // first translate balances out the whitespace
+      context.translate(-minX, -minY);
+      // foo = (canvas.width() - signatureWidth) / 2 ;
+      // bar = (canvas.height() - signatureHeight) / 2;
+      // console.log(foo, bar);
+      // context.translate(foo, bar);
+
+      context.scale.apply(context, [scaleFactor, scaleFactor]);
+    } else {
+      context.scale.apply(context, settings.scale);
+    }
 
     for(var i in paths) {
       if (typeof paths[i] === 'object') {
@@ -987,6 +1027,7 @@ $.fn.signaturePad.defaults = {
   , onDraw : null // Pass a callback to be used to capture the drawing process
   , onDrawEnd : null // Pass a callback to be exectued after the drawing process
   , scale: [1, 1] // Canvas scale for X and Y respectivately
+  , autoscale: false
 }
 
 }(jQuery))
