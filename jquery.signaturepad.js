@@ -626,12 +626,13 @@ function SignaturePad (selector, options) {
         minY = Math.min(el.my, el.ly, minY);
       });
 
-      // these might have to be constrainged to zero, because we're also scaling the whitespace
-      // OR (this would be "nicer" but more work --  we could actually adjust the points on the sampled json)
+      var padding = 0.15;
+      maxX *= (1 + padding);
+      minX *= (1 - padding);
+      maxY *= (1 + padding);
+      minY *= (1 - padding);
       var signatureWidth = maxX - minX;
       var signatureHeight = maxY - minY;
-      var signatureWidth = maxX;
-      var signatureHeight = maxY;
       var signatureAspectRatio = signatureWidth / signatureHeight;
       var canvasAspectRatio = canvas.width() / canvas.height();
       if (signatureAspectRatio > canvasAspectRatio) {
@@ -648,17 +649,16 @@ function SignaturePad (selector, options) {
       // first translate balances out the whitespace.
       // this only fixes the whitespace on the CONSTRAINING
       // dimenson.  i.e. the x axis for "fat" signatures
-      context.translate(-minX / 2, -minY / 2);
+      context.translate(-minX * scaleFactor, -minY * scaleFactor);
+      context.scale.apply(context, [scaleFactor, scaleFactor]);
 
       // now to center on the non-constraining dimension
       // one of these will be zero (the constraining dimension)
       // then the other gets translated to the middle
       context.translate(
-        (canvas.width() - signatureWidth * scaleFactor) / 2,
-        (canvas.height() - signatureHeight * scaleFactor) / 2
-      );
+        (canvas.width() / scaleFactor - signatureWidth) / 2,
+        (canvas.height() / scaleFactor - signatureHeight) / 2);
 
-      context.scale.apply(context, [scaleFactor, scaleFactor]);
     } else {
       context.scale.apply(context, settings.scale);
     }
