@@ -286,8 +286,15 @@ function SignaturePad (selector, options) {
         canvas.unbind('mousemove.signaturepad')
       }
 
-      if (output.length > 0 && settings.onDrawEnd && typeof settings.onDrawEnd === 'function')
-        settings.onDrawEnd.apply(self)
+      if (output.length > 0) {
+        if (settings.onDrawEnd && typeof settings.onDrawEnd === 'function')
+            settings.onDrawEnd.apply(self)
+
+        strokePoints = [];
+        resetCanvas();
+
+        drawSignature(output, canvasContext, false);
+      }
     }
 
     previous.x = null
@@ -315,12 +322,7 @@ function SignaturePad (selector, options) {
     canvasContext.closePath()
   }
 
-  /**
-   * Clears all drawings off the canvas and redraws the signature line
-   *
-   * @private
-   */
-  function clearCanvas () {
+  function resetCanvas() {
     canvasContext.clearRect(0, 0, element.width, element.height)
     canvasContext.fillStyle = settings.bgColour
     canvasContext.fillRect(0, 0, element.width, element.height)
@@ -330,7 +332,15 @@ function SignaturePad (selector, options) {
 
     canvasContext.lineWidth = settings.penWidth
     canvasContext.strokeStyle = settings.penColour
+  }
 
+  /**
+   * Clears all drawings off the canvas and redraws the signature line
+   *
+   * @private
+   */
+  function clearCanvas () {
+    resetCanvas();
     $(settings.output, context).val('')
     output = []
 
@@ -654,7 +664,6 @@ function SignaturePad (selector, options) {
     drawOnly is enabled and it would be only part of drawSignature when called by regenerate
     function.
     */
-    console.log("strokePath", paths);
     var bezierSkip = 4; // this program samples too fast, so even if we spline it,
                          // the result is choppy. need to throw away points or do
                          // a best fit curve of some sort. throwing away points
