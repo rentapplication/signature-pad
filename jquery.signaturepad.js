@@ -213,9 +213,9 @@ function SignaturePad (selector, options) {
 
     strokePoints.push({'lx': newX, 'ly': newY,
                        'mx': previous.x, 'my': previous.y});
-    bezierSkip = 4;
+
     // 4 points to define a bezier * the number of points we need for skipping
-    var maxCacheLength = 4 * bezierSkip;
+    var maxCacheLength = 4 * settings.bezierSkip;
 
     if (strokePoints.length >= maxCacheLength) {
       strokePath(strokePoints, canvasContext);
@@ -678,7 +678,7 @@ function SignaturePad (selector, options) {
       var section = sections[k];
 
       var lastPoint = section.pop();
-      section = section.filter(function(element, index) { return index % bezierSkip == 0; });
+      section = section.filter(function(element, index) { return index % settings.bezierSkip == 0; });
       section.push(lastPoint);
 
       var simpleTuples = section.map(function(n) {return[n.lx, n.ly]});
@@ -724,13 +724,6 @@ function SignaturePad (selector, options) {
    * @param {Boolean} saveOutput whether to write the path to the output array or not
    */
   function drawSignature (paths, context, saveOutput) {
-    var drawLinearSegments = false;
-    var drawBezierCurves = true;
-    var bezierSkip = 4; // this program samples too fast, so even if we spline it,
-                         // the result is choppy. need to throw away points or do
-                         // a best fit curve of some sort. throwing away points
-                         // is easier. Only use 1/bezierSkip points.
-
     if (settings.autoscale) {
       var maxX = 0,
           maxY = 0,
@@ -783,7 +776,7 @@ function SignaturePad (selector, options) {
     for(var i in paths) {
       if (typeof paths[i] === 'object') {
 
-        if (drawLinearSegments === true) {
+        if (settings.drawLinearSegments === true) {
           context.beginPath()
           context.strokeStyle = '#ff0000';
           context.moveTo(paths[i].mx, paths[i].my)
@@ -804,7 +797,7 @@ function SignaturePad (selector, options) {
       }
     } /* end linear segments */
 
-    if (drawBezierCurves === true) {
+    if (settings.drawBezierCurves === true) {
       strokePath(paths, context);
     } /* end bezier curves */
   }
@@ -1042,7 +1035,16 @@ $.fn.signaturePad.defaults = {
   , onDraw : null // Pass a callback to be used to capture the drawing process
   , onDrawEnd : null // Pass a callback to be exectued after the drawing process
   , scale: [1, 1] // Canvas scale for X and Y respectivately
-  , autoscale: false
+  , autoscale: false // Autoscale the signature size if rendered onto a different sized canvas,
+  , drawLinearSegments: true // Original default behavior -- linear interpolation between sampled points for rendering signature
+  , drawBezierCurves: false // Render smoother signatures using Bezier curves that pass through all the sampled points. Bezier curves are the new hot stuff, but lets let the default behavior be the original for now
+  , bezierSkip: 4, // Too many sample points make the beziers still squiggly, so skip some. The more you skip, the more the shape gets distorted from the sample, but the smoother the loops will look.  It may do a poor job with rendering the maxima/minima though.
+                   // TODO: Ideally you actually don't skip ARBITRARY points, but you figure out which points are higher value.  for example, max and max y, min x and min y within a segment will tell you how far out the mouse ACTUALLY went.  if you skip the apexes
+                   // It will make the signature render poorly.  This is an improvement for later.
+                   // this program samples too fast, so even if we spline it,
+                   // the result is choppy. need to throw away points or do
+                   // a best fit curve of some sort. throwing away points
+                   // is easier. Only use 1/bezierSkip points. Also reduces computational effort.
 }
 
 }(jQuery))
