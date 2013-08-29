@@ -211,15 +211,17 @@ function SignaturePad (selector, options) {
     if (newYOffset)
       newY += newYOffset
 
-    if (settings.drawLinearSegments === true) {
-      canvasContext.beginPath()
-      canvasContext.moveTo(previous.x, previous.y)
-      canvasContext.lineTo(newX, newY)
-      canvasContext.lineCap = settings.penCap
-      canvasContext.stroke()
-      canvasContext.closePath()
-    }
+    // We always draw the linear bits
+    canvasContext.beginPath()
+    canvasContext.moveTo(previous.x, previous.y)
+    canvasContext.lineTo(newX, newY)
+    canvasContext.lineCap = settings.penCap
+    canvasContext.stroke()
+    canvasContext.closePath()
 
+
+    // But if we want beziers, we erase the straight lines
+    // As soon as we have enough points to draw a bezier over it
     if (settings.drawBezierCurves === true) {
       strokePoints.push({'lx': newX, 'ly': newY,
                          'mx': previous.x, 'my': previous.y});
@@ -228,10 +230,27 @@ function SignaturePad (selector, options) {
       var maxCacheLength = 4 * settings.bezierSkip;
 
       if (strokePoints.length >= maxCacheLength) {
+        // "Erase" the linear part that we drew and replace it with the bezier
+        var retrace = output.slice(output.length - maxCacheLength + 2, output.length);
+
+        canvasContext.strokeStyle = settings.bgColour;
+        for (i in retrace) {
+          var point = retrace[i];
+          canvasContext.beginPath()
+          canvasContext.moveTo(point.mx, point.my)
+          canvasContext.lineTo(point.lx, point.ly)
+          canvasContext.lineCap = settings.penCap
+          canvasContext.stroke()
+          canvasContext.closePath()
+        }
+        canvasContext.strokeStyle = settings.penColour
         strokePath(strokePoints, canvasContext);
         strokePoints = strokePoints.slice(maxCacheLength - 1, maxCacheLength);
       }
     }
+
+
+    // does javascript support negative indexing at all?
 
     output.push({
       'lx' : newX
