@@ -83,7 +83,10 @@
     var getBezierControlPoints = function(sampledPoints) {
       if (sampledPoints.length < 4) {
         console.log("too short:", sampledPoints);
-        // should do linear or quadratic beziers
+        // TODO
+        // len == 2 another special case, draw a line
+        // len == 3 draw quadratic
+        // len >= 4 do what we are currently doing.
         return;
       }
       var M = generate141Matrix(sampledPoints.length - 2);
