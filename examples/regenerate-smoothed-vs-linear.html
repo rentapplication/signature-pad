@@ -28,9 +28,9 @@
   </div>
 
   <div id="sig3" class="sigPad signed" style="width:800px;border:solid black 1px;">
-    <div class="sigWrapper" style="height:110px;">
+    <div class="sigWrapper" style="height:310px;">
       <div class="typed">Sir John A. Macdonald</div>
-      <canvas class="pad" width="792" height="110"></canvas>
+      <canvas class="pad" width="792" height="310"></canvas>
     </div>
     <p>Sir John A. Macdonald<br>July 1, 1867</p>
   </div>
@@ -53,7 +53,7 @@
       $('#sig1').signaturePad({displayOnly:true}).regenerate(sig);
       $('#sig2').signaturePad({displayOnly:true, scale:[2, 2]}).regenerate(sig);
       $('#sig3').signaturePad({displayOnly:true, scale:[4, 0.5], autoscale:true}).regenerate(sig);
-      $('#sig4').signaturePad({displayOnly:true, autoscale:true}).regenerate(sig);
+      $('#sig4').signaturePad({displayOnly:true, autoscale:true, drawLinearSegments:false, drawBezierCurves:true}).regenerate(sig);
     });
   </script>
   <script src="../assets/json2.min.js"></script>
