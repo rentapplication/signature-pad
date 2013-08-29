@@ -157,6 +157,8 @@ function SignaturePad (selector, options) {
   , typeItNumChars = 0
 
 
+  , strokePoints = []
+
   /**
    * Clears the mouseLeaveTimeout
    * Resets some other variables that may be active
@@ -209,12 +211,16 @@ function SignaturePad (selector, options) {
     if (newYOffset)
       newY += newYOffset
 
-    canvasContext.beginPath()
-    canvasContext.moveTo(previous.x, previous.y)
-    canvasContext.lineTo(newX, newY)
-    canvasContext.lineCap = settings.penCap
-    canvasContext.stroke()
-    canvasContext.closePath()
+    strokePoints.push({'lx': newX, 'ly': newY,
+                       'mx': previous.x, 'my': previous.y});
+    bezierSkip = 4;
+    // 4 points to define a bezier * the number of points we need for skipping
+    var maxCacheLength = 4 * bezierSkip;
+
+    if (strokePoints.length >= maxCacheLength) {
+      strokePath(strokePoints, canvasContext);
+      strokePoints = strokePoints.slice(maxCacheLength - 1, maxCacheLength);
+    }
 
     output.push({
       'lx' : newX
@@ -598,6 +604,117 @@ function SignaturePad (selector, options) {
   }
 
   /**
+   * Draws a 3-sized piece of the signature.  Supposed to be reused by
+   * drawSignature and drawLine
+   *
+   * @private
+   *
+   * @param {Array} Array of at least `bezierSkip` * 4 points
+   * @param {Object} context the canvas context to draw on
+   */
+  function strokePath(paths, context) {
+    var showSampledPoints = false;
+    /* OK, a few thoughts here:
+    - if we have a signature with 250 points and we are going to draw 3 points each time,
+    then we would have ~83 calls to this function .
+    - I think I remembered why I didn't implement the autoscaling feature yesterday...
+    it was because it is really only valid for *drawOnly* mode... think about it, the user
+    draws the signature, then when drawSignature is called, the signature is centered, and
+    zoomed in/out... not a good UX, so maybe autoscaling should only be enabled when
+    drawOnly is enabled and it would be only part of drawSignature when called by regenerate
+    function.
+    */
+    console.log("strokePath", paths);
+    var bezierSkip = 4; // this program samples too fast, so even if we spline it,
+                         // the result is choppy. need to throw away points or do
+                         // a best fit curve of some sort. throwing away points
+                         // is easier. Only use 1/bezierSkip points.
+    var section = [];   // section is an array of path points that will be used
+                        // to compute the bezier control points
+    var sections = [];  // sections is an array of the preceding section arrays
+
+    for (var i = 0; i < paths.length - 1; i++) {
+      // this method of separating the contiguous paths is fucking stupid
+      if (typeof(paths[i]) === 'object' && typeof(paths[i + 1]) === 'object') {
+        var source = paths[i];
+        var destination = paths[i + 1];
+
+        if (source.mx == source.lx && source.my == source.ly) {
+          // don't put duplicated elements in, it screws up
+          // the curves. do nothing here.
+          continue;
+        } else {
+          section.push(source);
+        }
+
+        if ( !(source.lx == destination.mx && source.ly == destination.my) &&
+             !(source.mx == destination.lx && source.my == destination.ly) ) {
+          // when we reach the endpoint or starting point of a signaturepad segment
+          // (i.e. somewhere where the user has either STARTED clicking and dragging,
+          // or somewhehire the user has lifted the mouse), one of these 2 conditions
+          // is met.  save this as a separate section (so we don't try to stroke beziers
+          // where the user has lifted the mouse)
+
+          // First save the section as an independent piece in our sections array
+          sections.push(section);
+          // Now reset the section array to start recording the next section
+          section = [];
+        }
+
+        if (i == paths.length - 2) {
+          section.push(destination);
+          sections.push(section);
+        }
+      }
+    }
+
+    /*
+      Now we have sections of points that we have sampled.
+      Next step is to compute the Bezier control points that will render
+      curves that pass through all the sampled points.
+    */
+
+    for (k = 0; k < sections.length; k++) {
+      var section = sections[k];
+
+      var lastPoint = section.pop();
+      section = section.filter(function(element, index) { return index % bezierSkip == 0; });
+      section.push(lastPoint);
+
+      var simpleTuples = section.map(function(n) {return[n.lx, n.ly]});
+      var beziers = getBezierControlPoints(simpleTuples);
+
+      for (var i in beziers) {
+        var p0 = beziers[i][0],
+            p1 = beziers[i][1],
+            p2 = beziers[i][2],
+            p3 = beziers[i][3];
+
+        // p0 and p3 are the start and end points of the bezier curve.
+        // i want to see these plotted.
+        if (showSampledPoints === true) {
+          var pixelSize = 2;
+          context.fillStyle = '#FF0000';
+          context.fillRect(p0[0], p0[1], pixelSize, pixelSize);
+          context.fillRect(p3[0], p3[1], pixelSize, pixelSize);
+        }
+        context.beginPath()
+        context.moveTo(p0[0], p0[1])
+        context.bezierCurveTo(
+          p1[0], p1[1],
+          p2[0], p2[1],
+          p3[0], p3[1]
+          );
+        context.lineWidth = 1;
+        context.lineCap = settings.penCap
+        context.strokeStyle = '#0000FF';
+        context.stroke()
+        context.closePath();
+      }
+    }
+  }
+
+  /**
    * Redraws the signature on a specific canvas
    *
    * @private
@@ -688,116 +805,7 @@ function SignaturePad (selector, options) {
     } /* end linear segments */
 
     if (drawBezierCurves === true) {
-      /*
-        Identify disconnected sections so we don't accidentally try to draw
-        bezier curves between them (when user lifts the pen/mouse)
-      */
-
-      var section = [];   // section is an array of path points that will be used
-                          // to compute the bezier control points
-      var sections = [];  // sections is an array of the preceding section arrays
-
-      // compute the total distance traveled for the entire signature
-      // we'll use this for calculating stroke width later to simulate
-      // signing speed
-      var xs = paths.map(function(n) { return n.lx; });
-      var ys = paths.map(function(n) { return n.ly; });
-      var dxs = numeric.pow(xs.map(function(item,index) {return xs[index+1]-item}), 2);
-      var dys = numeric.pow(ys.map(function(item,index) {return ys[index+1]-item}), 2);
-      dxs.pop();
-      dys.pop();
-      var distances = numeric.add(dxs, dys);
-
-      var mean = function(array) { return numeric.sum(array) / array.length;}
-      var stdev = function(array) {
-        var avg = mean(array);
-        diffs = array.map(function(i) {
-          return i-avg;
-        });
-        var squares = numeric.pow(diffs, 2);
-        return Math.sqrt(numeric.sum(squares));
-      }
-
-      var meanDistance = mean(distances);
-      var stdevDistance = stdev(distances);
-
-      // Not using actual pythagorean distance because, well who cares, and it'll require
-      // extra computation later.  only distance by traversing city blocks
-
-      for (var i = 0; i < paths.length - 1; i++) {
-        // this method of separating the contiguous paths is fucking stupid
-        if (typeof(paths[i]) === 'object' && typeof(paths[i + 1]) === 'object') {
-          var source = paths[i];
-          var destination = paths[i + 1];
-
-          if (source.mx == source.lx && source.my == source.ly) {
-            // don't put duplicated elements in, it screws up
-            // the curves. do nothing here.
-          } else {
-            section.push(source);
-          }
-
-          if ( !(source.lx == destination.mx && source.ly == destination.my) &&
-               !(source.mx == destination.lx && source.my == destination.ly) ) {
-
-            // First save the section as an independent piece in our sections array
-            sections.push(section);
-            // Now reset the section array to start recording the next section
-            section = [];
-          }
-
-          if (i == paths.length - 2) {
-            section.push(destination);
-            sections.push(section);
-          }
-        }
-      }
-
-      /*
-        Now we have sections of points that we have sampled.
-        Next step is to compute the Bezier control points that will render
-        curves that pass through all the sampled points.
-      */
-
-      for (k = 0; k < sections.length; k++) {
-        var section = sections[k];
-
-        var lastPoint = section.pop();
-        section = section.filter(function(element, index) { return index % bezierSkip == 0; });
-        section.push(lastPoint);
-
-        var simpleTuples = section.map(function(n) {return[n.lx, n.ly]});
-        var beziers = getBezierControlPoints(simpleTuples);
-
-        var width = 3;
-        var oldSegmentLength = 1;
-        for (var i in beziers) {
-          var p0 = beziers[i][0],
-              p1 = beziers[i][1],
-              p2 = beziers[i][2],
-              p3 = beziers[i][3];
-
-          var newSegmentLength = Math.pow(p0[0] - p3[0], 2) + Math.pow(p0[1] - p3[1], 2);
-          if (newSegmentLength > oldSegmentLength) {
-            width -= 0.8;
-          } else {
-            width + 0.8;
-          }
-
-          context.beginPath()
-          context.moveTo(p0[0], p0[1])
-          context.bezierCurveTo(
-            p1[0], p1[1],
-            p2[0], p2[1],
-            p3[0], p3[1]
-            );
-          context.lineWidth = width;
-          context.lineCap = settings.penCap
-          context.strokeStyle = '#0000FF';
-          context.stroke()
-          context.closePath();
-        }
-      }
+      strokePath(paths, context);
     } /* end bezier curves */
   }
 
