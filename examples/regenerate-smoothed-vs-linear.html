@@ -11,7 +11,8 @@
   <script src="http://ajax.googleapis.com/ajax/libs/jquery/1.5.1/jquery.min.js"></script>
 </head>
 <body>
-  <div id="sig1" class="sigPad signed" style="border: solid black 1px;">
+
+  <div id="sig1" class="sigPad signed" style="border: solid black 1px; display:none;">
     <div class="sigWrapper">
       <div class="typed">Sir John A. Macdonald</div>
       <canvas class="pad" width="198" height="55"></canvas>
@@ -19,14 +20,13 @@
     <p>Sir John A. Macdonald<br>July 1, 1867</p>
   </div>
 
-  <div id="sig2" class="sigPad signed" style="width:400px;border:solid black 1px;">
+  <div id="sig2" class="sigPad signed" style="width:400px;border:solid black 1px; display:none;">
     <div class="sigWrapper" style="height:110px;">
       <div class="typed">Sir John A. Macdonald</div>
       <canvas class="pad" width="396" height="110" style="background-color:gray"></canvas>
     </div>
     <p>Sir John A. Macdonald<br>July 1, 1867</p>
   </div>
-
   <div id="sig3" class="sigPad signed" style="width:800px;border:solid black 1px;">
     <div class="sigWrapper" style="height:310px;">
       <div class="typed">Sir John A. Macdonald</div>
@@ -47,7 +47,7 @@
   <script src="../assets/bezier.js"></script>
 
   <script src="../jquery.signaturepad.js"></script>
-  <script src="sample-signature-output.js"></script>
+  <script src="carlos-signature-output.js"></script>
   <script>
     $(document).ready(function() {
       $('#sig1').signaturePad({displayOnly:true}).regenerate(sig);
