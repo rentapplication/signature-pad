@@ -211,15 +211,26 @@ function SignaturePad (selector, options) {
     if (newYOffset)
       newY += newYOffset
 
-    strokePoints.push({'lx': newX, 'ly': newY,
-                       'mx': previous.x, 'my': previous.y});
+    if (settings.drawLinearSegments === true) {
+      canvasContext.beginPath()
+      canvasContext.moveTo(previous.x, previous.y)
+      canvasContext.lineTo(newX, newY)
+      canvasContext.lineCap = settings.penCap
+      canvasContext.stroke()
+      canvasContext.closePath()
+    }
 
-    // 4 points to define a bezier * the number of points we need for skipping
-    var maxCacheLength = 4 * settings.bezierSkip;
+    if (settings.drawBezierCurves === true) {
+      strokePoints.push({'lx': newX, 'ly': newY,
+                         'mx': previous.x, 'my': previous.y});
 
-    if (strokePoints.length >= maxCacheLength) {
-      strokePath(strokePoints, canvasContext);
-      strokePoints = strokePoints.slice(maxCacheLength - 1, maxCacheLength);
+      // 4 points to define a bezier * the number of points we need for skipping
+      var maxCacheLength = 4 * settings.bezierSkip;
+
+      if (strokePoints.length >= maxCacheLength) {
+        strokePath(strokePoints, canvasContext);
+        strokePoints = strokePoints.slice(maxCacheLength - 1, maxCacheLength);
+      }
     }
 
     output.push({
@@ -705,9 +716,9 @@ function SignaturePad (selector, options) {
           p2[0], p2[1],
           p3[0], p3[1]
           );
-        context.lineWidth = 1;
+
+        context.lineWidth = settings.penWidth
         context.lineCap = settings.penCap
-        context.strokeStyle = '#0000FF';
         context.stroke()
         context.closePath();
       }
