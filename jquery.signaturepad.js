@@ -817,7 +817,6 @@ function SignaturePad (selector, options) {
 
         if (settings.drawLinearSegments === true) {
           context.beginPath()
-          context.strokeStyle = '#ff0000';
           context.moveTo(paths[i].mx, paths[i].my)
           context.lineTo(paths[i].lx, paths[i].ly)
           context.lineCap = settings.penCap
