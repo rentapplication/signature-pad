@@ -249,9 +249,6 @@ function SignaturePad (selector, options) {
       }
     }
 
-
-    // does javascript support negative indexing at all?
-
     output.push({
       'lx' : newX
       , 'ly' : newY
@@ -672,6 +669,8 @@ function SignaturePad (selector, options) {
                         // to compute the bezier control points
     var sections = [];  // sections is an array of the preceding section arrays
 
+
+    // Separate the sampled points into contiguous sections
     for (var i = 0; i < paths.length - 1; i++) {
       // this method of separating the contiguous paths is fucking stupid
       if (typeof(paths[i]) === 'object' && typeof(paths[i + 1]) === 'object') {
@@ -713,13 +712,33 @@ function SignaturePad (selector, options) {
       curves that pass through all the sampled points.
     */
 
+    var lengths = [];
+    for (k = 0; k < sections.length; k++) {
+
+      // Clean the sections for use. Make sure we're keeping the endpoints, and strip out every 1/bezierSkip points.
+      var lastPoint = sections[k].pop();
+      sections[k] = sections[k].filter(function(element, index) { return index % settings.bezierSkip == 0; });
+      sections[k].push(lastPoint);
+
+      // compute total length information so we can do some variable width stuff
+      var section = sections[k];
+      for (j = 0; j < section.length; j++) {
+        var point = section[j];
+
+        // city blocks distance is good enough and doesn't require squaring and square rooting
+        var length = Math.abs(point.lx - point.mx) + Math.abs(point.ly - point.my);
+        lengths.push(length);
+        // console.log(point.lx, point.mx, point.ly , point.my);
+      }
+    }
+    var signatureStats = stats(lengths); //stats() is in beziers.js
+    signatureStats.length = numeric.sum(lengths);
+    signatureStats.mean *= 3;     // the number of segments per bezier? Sort of.
+    signatureStats.deviation *= 3 // this isn't accurate, but its good enough for me for today and it makes the signature pretty-ish)
+
+
     for (k = 0; k < sections.length; k++) {
       var section = sections[k];
-
-      var lastPoint = section.pop();
-      section = section.filter(function(element, index) { return index % settings.bezierSkip == 0; });
-      section.push(lastPoint);
-
       var simpleTuples = section.map(function(n) {return[n.lx, n.ly]});
       var beziers = getBezierControlPoints(simpleTuples);
 
@@ -728,6 +747,31 @@ function SignaturePad (selector, options) {
             p1 = beziers[i][1],
             p2 = beziers[i][2],
             p3 = beziers[i][3];
+
+        var bezierSegmentLength = (
+                  Math.abs(p0[0] - p1[0]) +
+                  Math.abs(p1[0] - p2[0]) +
+                  Math.abs(p2[0] - p3[0]) +
+                  Math.abs(p0[1] - p1[1]) +
+                  Math.abs(p1[1] - p2[1]) +
+                  Math.abs(p2[1] - p3[1])
+                  );
+        // is this long or short compared to the average segment?
+        // how many standard deviations from the mean (this data set isn't gaussian... but good enough)
+        var zscore = (bezierSegmentLength - signatureStats.mean) / signatureStats.deviation;
+        if (zscore > 0) {
+          // fast
+          var width = 3 - zscore / 2.5;
+        } else if (zscore <= 0) {
+          var width = 3 - zscore * 2;
+        }
+        // Ugh, this is straight up hacky. Basically, the distribution isn't gaussian.
+        // In particular, to the downside (negative z's, the magitude of zscores tend to
+        // not vary so far from the mean, but to the upside (positive z's, fast pen strokes),
+        // they tend to be really big numbers, like 4+ zscores.  so this is stupidly applying
+        // different scaling on both sides of zero.
+
+        // console.log("len:", parseInt(bezierSegmentLength),'z-score:', +zscore.toFixed(3), 'width:', +width.toFixed(3));
 
         // p0 and p3 are the start and end points of the bezier curve.
         // i want to see these plotted.
@@ -746,6 +790,7 @@ function SignaturePad (selector, options) {
           );
 
         context.lineWidth = settings.penWidth
+        context.lineWidth = width;
         context.lineCap = settings.penCap
         context.stroke()
         context.closePath();
