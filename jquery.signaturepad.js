@@ -736,7 +736,6 @@ function SignaturePad (selector, options) {
     signatureStats.mean *= 3;     // the number of segments per bezier? Sort of.
     signatureStats.deviation *= 3 // this isn't accurate, but its good enough for me for today and it makes the signature pretty-ish)
 
-
     for (k = 0; k < sections.length; k++) {
       var section = sections[k];
       var simpleTuples = section.map(function(n) {return[n.lx, n.ly]});
@@ -748,30 +747,32 @@ function SignaturePad (selector, options) {
             p2 = beziers[i][2],
             p3 = beziers[i][3];
 
-        var bezierSegmentLength = (
-                  Math.abs(p0[0] - p1[0]) +
-                  Math.abs(p1[0] - p2[0]) +
-                  Math.abs(p2[0] - p3[0]) +
-                  Math.abs(p0[1] - p1[1]) +
-                  Math.abs(p1[1] - p2[1]) +
-                  Math.abs(p2[1] - p3[1])
-                  );
-        // is this long or short compared to the average segment?
-        // how many standard deviations from the mean (this data set isn't gaussian... but good enough)
-        var zscore = (bezierSegmentLength - signatureStats.mean) / signatureStats.deviation;
-        if (zscore > 0) {
-          // fast
-          var width = 3 - zscore / 2.5;
-        } else if (zscore <= 0) {
-          var width = 3 - zscore * 2;
-        }
-        // Ugh, this is straight up hacky. Basically, the distribution isn't gaussian.
-        // In particular, to the downside (negative z's, the magitude of zscores tend to
-        // not vary so far from the mean, but to the upside (positive z's, fast pen strokes),
-        // they tend to be really big numbers, like 4+ zscores.  so this is stupidly applying
-        // different scaling on both sides of zero.
+        if (settings.variableStrokeWidth === true) {
+          var bezierSegmentLength = (
+                    Math.abs(p0[0] - p1[0]) +
+                    Math.abs(p1[0] - p2[0]) +
+                    Math.abs(p2[0] - p3[0]) +
+                    Math.abs(p0[1] - p1[1]) +
+                    Math.abs(p1[1] - p2[1]) +
+                    Math.abs(p2[1] - p3[1])
+                    );
+          // is this long or short compared to the average segment?
+          // how many standard deviations from the mean (this data set isn't gaussian... but good enough)
+          var zscore = (bezierSegmentLength - signatureStats.mean) / signatureStats.deviation;
+          if (zscore > 0) {
+            // fast
+            var width = 3 - zscore / 2.5;
+          } else if (zscore <= 0) {
+            var width = 3 - zscore * 2;
+          }
+          // Ugh, this is straight up hacky. Basically, the distribution isn't gaussian.
+          // In particular, to the downside (negative z's, the magitude of zscores tend to
+          // not vary so far from the mean, but to the upside (positive z's, fast pen strokes),
+          // they tend to be really big numbers, like 4+ zscores.  so this is stupidly applying
+          // different scaling on both sides of zero.
 
-        // console.log("len:", parseInt(bezierSegmentLength),'z-score:', +zscore.toFixed(3), 'width:', +width.toFixed(3));
+          // console.log("len:", parseInt(bezierSegmentLength),'z-score:', +zscore.toFixed(3), 'width:', +width.toFixed(3));
+        }
 
         // p0 and p3 are the start and end points of the bezier curve.
         // i want to see these plotted.
@@ -1121,6 +1122,7 @@ $.fn.signaturePad.defaults = {
   , autoscale: false // Autoscale the signature size if rendered onto a different sized canvas,
   , drawBezierCurves: false // Render smoother signatures using Bezier curves that pass through all the sampled points. Bezier curves are the new hot stuff, but lets let the default behavior be the original for now
                             // Original default behavior -- linear interpolation between sampled points for rendering signature
+  , variableStrokeWidth: false // Vary the width of the line segments based on estimated "speed"
   , bezierSkip: 4, // Too many sample points make the beziers still squiggly, so skip some. The more you skip, the more the shape gets distorted from the sample, but the smoother the loops will look.  It may do a poor job with rendering the maxima/minima though.
                    // TODO: Ideally you actually don't skip ARBITRARY points, but you figure out which points are higher value.  for example, max and max y, min x and min y within a segment will tell you how far out the mouse ACTUALLY went.  if you skip the apexes
                    // It will make the signature render poorly.  This is an improvement for later.

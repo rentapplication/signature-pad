@@ -13,7 +13,7 @@
   <form method="post" action="">
 
     <div class="sigPad" id="linear" style="width:404px;">
-      <h2>Linear Interpolation</h2>
+      <h2>Linear Interpolation (Original)</h2>
       <ul class="sigNav">
         <li class="drawIt"><a href="#draw-it" >Draw It</a></li>
         <li class="clearButton"><a href="#clear">Clear</a></li>
@@ -26,7 +26,7 @@
     </div>
 
     <div class="sigPad" id="smoothed" style="width:404px;">
-      <h2>Bezier Curves</h2>
+      <h2>Bezier Curves (constant pen width)</h2>
       <ul class="sigNav">
         <li class="drawIt"><a href="#draw-it" >Draw It</a></li>
         <li class="clearButton"><a href="#clear">Clear</a></li>
@@ -35,6 +35,19 @@
         <div class="typed"></div>
         <canvas class="pad" width="400" height="250"></canvas>
         <input type="hidden" name="output-2" class="output">
+      </div>
+    </div>
+
+    <div class="sigPad" id="smoothed-variableStrokeWidth" style="width:404px;">
+      <h2>Bezier Curves (variable pen width)</h2>
+      <ul class="sigNav">
+        <li class="drawIt"><a href="#draw-it" >Draw It</a></li>
+        <li class="clearButton"><a href="#clear">Clear</a></li>
+      </ul>
+      <div class="sig sigWrapper" style="height:auto;">
+        <div class="typed"></div>
+        <canvas class="pad" width="400" height="250"></canvas>
+        <input type="hidden" name="output-3" class="output">
       </div>
     </div>
 
@@ -48,6 +61,7 @@
     $(document).ready(function() {
       $('#linear').signaturePad({drawOnly:true, lineTop:200});
       $('#smoothed').signaturePad({drawOnly:true, drawBezierCurves:true, lineTop:200});
+      $('#smoothed-variableStrokeWidth').signaturePad({drawOnly:true, drawBezierCurves:true, variableStrokeWidth:true, lineTop:200});
     });
   </script>
   <script src="../assets/json2.min.js"></script>
