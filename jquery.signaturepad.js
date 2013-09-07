@@ -860,7 +860,7 @@ function SignaturePad (selector, options) {
     for(var i in paths) {
       if (typeof paths[i] === 'object') {
 
-        if (settings.drawLinearSegments === true) {
+        if (settings.drawBezierCurves === false) {
           context.beginPath()
           context.moveTo(paths[i].mx, paths[i].my)
           context.lineTo(paths[i].lx, paths[i].ly)
@@ -1119,8 +1119,8 @@ $.fn.signaturePad.defaults = {
   , onDrawEnd : null // Pass a callback to be exectued after the drawing process
   , scale: [1, 1] // Canvas scale for X and Y respectivately
   , autoscale: false // Autoscale the signature size if rendered onto a different sized canvas,
-  , drawLinearSegments: true // Original default behavior -- linear interpolation between sampled points for rendering signature
   , drawBezierCurves: false // Render smoother signatures using Bezier curves that pass through all the sampled points. Bezier curves are the new hot stuff, but lets let the default behavior be the original for now
+                            // Original default behavior -- linear interpolation between sampled points for rendering signature
   , bezierSkip: 4, // Too many sample points make the beziers still squiggly, so skip some. The more you skip, the more the shape gets distorted from the sample, but the smoother the loops will look.  It may do a poor job with rendering the maxima/minima though.
                    // TODO: Ideally you actually don't skip ARBITRARY points, but you figure out which points are higher value.  for example, max and max y, min x and min y within a segment will tell you how far out the mouse ACTUALLY went.  if you skip the apexes
                    // It will make the signature render poorly.  This is an improvement for later.
