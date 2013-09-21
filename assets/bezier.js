@@ -5,7 +5,6 @@
       return r.deviation = Math.sqrt(r.variance = s / t), r;
     }
 
-
     // Matrices look like this:
     // q = [[1,2,3],
     //      [4,5,6],
@@ -90,13 +89,21 @@
 
     var getBezierControlPoints = function(sampledPoints) {
       if (sampledPoints.length < 4) {
-        console.log("too short:", sampledPoints);
-        // TODO
-        // len == 2 another special case, draw a line
-        // len == 3 draw quadratic
-        // len >= 4 do what we are currently doing.
-        return;
+        // We need 4 sampled points to draw a *cubic* bezier through those points
+        // These 3 cases are for shorter lengths: single point, line, quadratic
+        if (sampledPoints.length === 3) {
+            beziers =[sampledPoints[0], sampledPoints[1], sampledPoints[1], sampledPoints[2]];
+            return [beziers]
+        } else if (sampledPoints.length === 2) {
+            beziers = [sampledPoints[0], sampledPoints[0], sampledPoints[1], sampledPoints[1]]
+            return [beziers]
+        } else if (sampledPoints.length === 1) {
+            beziers = [sampledPoints[0], sampledPoints[0], sampledPoints[0], sampledPoints[0]];
+            return [beziers]
+        };
       }
+
+      // Below here we have enough points to generate a cubic bezier
       var M = generate141Matrix(sampledPoints.length - 2);
       var C = generateConstantMatrix(sampledPoints);
       var B = numeric.dot(numeric.inv(M), C);
@@ -111,6 +118,9 @@
     }
 
     /*
+
+    How does this basically work? Like this:
+
     var M = generate141Matrix(3);
 
     var sampledPoints = [[1,-1],
