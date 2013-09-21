@@ -272,7 +272,7 @@ function SignaturePad (selector, options) {
    * @param {Object} e The event object
    */
   function stopDrawing (e) {
-    if (!!e) {
+    if (!!e && !(e.type === "touchend" || e.type == "touchcancel")) {
       drawLine(e, 1)
     } else {
       if (touchable) {
