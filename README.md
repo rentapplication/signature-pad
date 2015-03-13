@@ -1,11 +1,11 @@
 # Examples
 
-[CAPTURING A DRAWN SIGNATURE](http://demo.rocketlease.com/site_media/signature-pad/examples/draw-smoothed-vs-linear.html) -- 3 examples:
+[CAPTURING A DRAWN SIGNATURE](http://ezl.github.io/signature-pad/) -- 3 examples:
 * the original implementation
 * smoothed
 * smoothed+variable width
 
-[REGENERATING A RECORDED SIGNATURE](http://demo.rocketlease.com/site_media/signature-pad/examples/regenerate-smoothed-vs-linear.html) -- 3 examples, all 3 of these are generating from the same data:
+[REGENERATING A RECORDED SIGNATURE](http://ezl.github.io/signature-pad/regeneration.html) -- 3 examples, all 3 of these are generating from the same data:
 * The first creates the signature by drawing straight line segments between sampled points
 * The second renders a cubic spline that passes through all of the sampled points
 * The third does the same as the second, but changes the width of the signature in response to perceived stroke velocity
@@ -15,7 +15,7 @@
 
 SignaturePad makes it possible for developers to embed an HTML5 canvas in a website that records mouse (or touch) drawn signatures, then re-renders them later.
 
-The primary use case, for me, is to include a "signing" component to online rental applications and leases for my company, [Rocket Lease](https://www.rocketlease.com).
+The primary use case, for me, is to include a "signing" component to online rental applications and leases for my company, [Rent Application](https://www.rentapplication.net).
 
 Original README/documentation below my added commentary, [check out the original](https://github.com/thomasjbradley/signature-pad/)
 
