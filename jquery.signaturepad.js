@@ -8,7 +8,7 @@
  *  var api = $('.sigPad').signaturePad({displayOnly:true})
  *  api.regenerate(sig)
  */
-define(["jQuery", "./assets/bezier.js", "./assets/numeric-1.2.6.min.js"], function ($, bezier, numberic) {
+define(["jquery", "./assets/bezier.js", "./assets/numeric-1.2.6.min.js"], function ($, bezier, numberic) {
   function SignaturePad (selector, options) {
     /**
      * Reference to the object for use in public methods
