@@ -920,28 +920,21 @@ define(["jquery", "./assets/bezier.js", "./assets/numeric-1.2.6.min.js"], functi
         $(settings.sig, context).show()
 
         if (!settings.displayOnly) {
-          console.log("!settings.displayOnly")
           if (!settings.drawOnly) {
-            console.log("!settings.drawOnly")
             $(settings.name, context).bind('keyup.signaturepad', function () {
-              console.log("keyup.signaturepad")
               type($(this).val())
             })
 
             $(settings.name, context).bind('blur.signaturepad', function () {
-              console.log("blur.signaturepad")
               type($(this).val())
             })
 
             $(settings.drawIt, context).bind('click.signaturepad', function (e) {
-              console.log("click.signaturepad")
               e.preventDefault()
               drawIt()
             })
           }
 
-          console.log("settings.drawOnly", settings.drawOnly)
-          console.log("settings.defaultAction", settings.defaultAction)
           if (settings.drawOnly || settings.defaultAction === 'drawIt') {
             drawIt()
           } else {
